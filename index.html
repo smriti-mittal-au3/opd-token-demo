@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OPD Token Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#f2f5f3; --surface:#ffffff; --ink:#14251f; --muted:#5a6d66; --line:#d6e0db;
+  --accent:#1d6b56; --accent-ink:#ffffff; --accent-soft:#e1efe9; --hi:#d9820b;
+  --chat-bg:#e7ece6; --bubble-me:#d6f2cc; --bubble-bot:#ffffff;
+  --ok:#1f7a3f; --warn:#a85a00; --bad:#b42318;
+  --tv-bg:#0a1411; --tv-fg:#e6f1ec; --tv-dim:#7f978e; --tv-line:#1d2c27; --tv-amber:#ffb22e;
+  --paper:#fffdf7; --paper-ink:#151515;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Noto Sans","Noto Sans Devanagari",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0d1513; --surface:#141f1b; --ink:#e3ede9; --muted:#93a8a0; --line:#25352f;
+  --accent:#4cb092; --accent-ink:#06120e; --accent-soft:#1a2d27; --hi:#f0a23a;
+  --chat-bg:#0f1a17; --bubble-me:#1f4636; --bubble-bot:#1a2622;
+  --ok:#5fc283; --warn:#e9a24a; --bad:#f07468; color-scheme:dark;}}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;padding:env(safe-area-inset-top,0px) 16px 0;}
+.wrap{max-width:760px;margin:0 auto;padding-block:12px 110px;}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+[hidden]{display:none!important}
+.muted{color:var(--muted)}
+
+.top{display:flex;align-items:center;gap:10px;padding-block:6px 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.cross{width:36px;height:36px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:800 24px/1 var(--display);flex:none}
+.hosp{font:700 17px/1.2 var(--display);overflow-wrap:anywhere}
+.sub{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+
+.h{font-size:20px;margin:22px 0 4px}
+.lead{color:var(--muted);margin:0 0 12px;max-width:62ch}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.danger{color:var(--bad)}
+
+/* Patient */
+.poster{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;border-top:5px solid var(--accent)}
+.poster h2{font-size:22px;line-height:1.15}
+.eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.poster .hi{margin:4px 0 12px;color:var(--muted)}
+.qr{background:#fff;padding:8px;border-radius:8px;width:146px;height:146px;display:grid;place-items:center}
+.qr img,.qr canvas{width:130px!important;height:130px!important}
+@media (max-width:460px){.poster{grid-template-columns:1fr}.qr{justify-self:center}}
+.chat-switch{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 8px}
+.chat-switch label{font-size:13px;color:var(--muted)}
+.chat-switch select{flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+.phone{max-width:430px;margin:0 auto;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--chat-bg)}
+.chat-head{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--accent);color:var(--accent-ink)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-ink);color:var(--accent);display:grid;place-items:center;font:800 20px/1 var(--display);flex:none}
+.chat-title{font-weight:600;line-height:1.2}
+.chat-sub{font-size:12px;opacity:.85}
+.chat-body{height:min(56vh,440px);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+.chat-empty{margin:auto;text-align:center;color:var(--muted);max-width:28ch;font-size:14px}
+.msg{display:flex}
+.msg.me{justify-content:flex-end}
+.bubble{max-width:82%;padding:7px 10px 18px;border-radius:10px;background:var(--bubble-bot);position:relative;font-size:14px;overflow-wrap:anywhere;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.msg.me .bubble{background:var(--bubble-me)}
+.bubble .t{position:absolute;right:8px;bottom:3px;font-size:10px;color:var(--muted)}
+.typing{display:flex;gap:4px;padding:12px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+.quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 8px}
+.quick:empty{display:none}
+.qr-btn{border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:99px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.chat-input{display:flex;gap:8px;padding:8px;background:var(--surface);border-top:1px solid var(--line)}
+.chat-input input{flex:1;min-width:0;border:1px solid var(--line);border-radius:99px;padding:10px 14px;background:var(--bg)}
+.send{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-size:18px;cursor:pointer;flex:none}
+
+/* Reception: queue control */
+.qc{display:grid;gap:12px}
+.qc-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.qc-now{text-align:center;background:var(--accent-soft);border-radius:12px;padding:8px 16px;min-width:96px}
+.qc-now span{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.qc-now b{font:800 40px/1 var(--display);font-variant-numeric:tabular-nums}
+.qc-doc{font:700 17px/1.2 var(--display)}
+.qc-pt{font-size:14px}
+.qc-wait{font-size:13px;color:var(--muted)}
+.qc-btns{display:flex;flex-wrap:wrap;gap:8px}
+.qc-btns .primary{flex:1 1 160px;font-size:16px}
+
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.field input,.field select{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);min-height:44px;width:100%}
+@media (max-width:460px){.form{grid-template-columns:1fr}}
+
+.printer{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 14px 18px;display:flex;flex-direction:column;align-items:center}
+.slot{width:280px;max-width:100%;height:12px;border-radius:6px;background:var(--ink);opacity:.85;margin-bottom:-4px;position:relative;z-index:1}
+.printer-label{font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase}
+.slip{width:256px;max-width:100%;background:var(--paper);color:var(--paper-ink);font-family:var(--mono);font-size:12px;padding:14px 14px 18px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.slip.printing{animation:feed 1.4s steps(14) both}
+@keyframes feed{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+.s-h{text-align:center;font-weight:700;font-size:13px}
+.s-sub{text-align:center;letter-spacing:.3em;font-size:11px}
+.s-rule{border-top:1px dashed var(--paper-ink);margin:8px 0;opacity:.6}
+.s-tok{text-align:center;font:800 64px/1 var(--display);margin:4px 0}
+.s-doc{text-align:center;font-weight:700}
+.s-row{display:flex;justify-content:space-between;gap:8px}
+.s-row b{text-align:right;overflow-wrap:anywhere}
+.s-foot{text-align:center;font-size:11px}
+.printer-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:center}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 10px;font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.toggle{display:flex;gap:8px;align-items:center;font-size:14px}
+
+.log{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.log li{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:8px 10px;font-size:14px}
+.log li.muted{border-left-color:var(--line)}
+.l-meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* TV */
+.tv-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.tv{background:var(--tv-bg);color:var(--tv-fg);border-radius:14px;overflow:hidden;position:relative;border:6px solid #1b1f1e}
+.tv:fullscreen{border:0;border-radius:0;display:flex;flex-direction:column;justify-content:space-between}
+.tv-head{display:flex;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--tv-line);font:700 15px/1.2 var(--display)}
+#tv-clock{color:var(--tv-amber);font-variant-numeric:tabular-nums}
+.tv-main{padding:20px 16px 16px;text-align:center}
+.tv-label{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--tv-dim)}
+.tv-label .hi{letter-spacing:0;text-transform:none}
+.tv-now{font:800 clamp(96px,32vw,200px)/1 var(--display);color:var(--tv-amber);font-variant-numeric:tabular-nums;margin:6px 0;border-radius:12px}
+.tv-now.flash{animation:flash 1s ease-in-out 3}
+@keyframes flash{50%{background:#2a2410}}
+.tv-doc{font-size:15px;color:var(--tv-dim)}
+.tv-next{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;padding:12px 16px;border-top:1px solid var(--tv-line)}
+.tv-next .tv-label{margin-right:4px}
+.tv-next span.n{border:1px solid var(--tv-line);border-radius:8px;padding:6px 10px;font:700 22px/1 var(--display);font-variant-numeric:tabular-nums}
+.tv-foot{border-top:1px solid var(--tv-line);overflow:hidden;white-space:nowrap;padding:8px 0;font-size:13px;color:var(--tv-dim)}
+.marquee span{display:inline-block;padding-left:100%;animation:scroll 22s linear infinite}
+@keyframes scroll{to{transform:translateX(-100%)}}
+.tv-banner{position:absolute;inset:auto 12px 44px 12px;background:var(--tv-amber);color:#1a1205;border-radius:10px;padding:10px 14px;font:800 20px/1.2 var(--display);text-align:center}
+.remote{display:flex;gap:8px;margin-top:12px}
+.remote .btn{flex:1}
+
+/* Sheet */
+.sheet-head{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+.sheet-head .row{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font:800 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+@media (max-width:520px){.stats{grid-template-columns:repeat(3,1fr)}}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;font-size:13px;min-width:1040px;width:100%;font-variant-numeric:tabular-nums}
+th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
+thead th{background:var(--accent-soft);font-weight:600}
+th.ix,td.ix{color:var(--muted);text-align:center;background:var(--bg);width:36px}
+.st{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.st.waiting{color:var(--warn)}.st.called{color:var(--accent)}.st.done{color:var(--ok)}.st.noshow{color:var(--bad)}
+.src-sample{color:var(--muted);font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.settings{display:grid;gap:12px}
+.settings .row{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Tabs + toast */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));z-index:10}
+.tab{border:0;background:transparent;padding:10px 2px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;position:relative;border-radius:8px}
+.tab[aria-selected="true"]{color:var(--accent);background:var(--accent-soft)}
+.tab .dot{position:absolute;top:6px;right:calc(50% - 32px);width:8px;height:8px;border-radius:50%;background:var(--hi)}
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#print-area{display:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* Printing on an 80 mm thermal printer */
+@media print{
+  @page{size:80mm auto;margin:0}
+  body{background:#fff;padding:0}
+  .wrap,.tabs,#toast{display:none!important}
+  #print-area{display:block}
+  #print-area .slip{width:72mm;box-shadow:none;margin:0 auto;padding:4mm 2mm;background:#fff;color:#000;animation:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="cross" aria-hidden="true">+</div>
+    <div><div class="hosp" id="hosp-name"></div><div class="sub">OPD token system</div></div>
+  </header>
+
+  <!-- PATIENT -->
+  <section id="view-patient" class="view">
+    <div class="poster">
+      <div>
+        <div class="eyebrow">Poster at the reception counter</div>
+        <h2>Get your OPD token on WhatsApp</h2>
+        <p class="hi">व्हाट्सऐप पर टोकन पाने के लिए QR स्कैन करें</p>
+        <button id="btn-scan" class="btn primary" type="button">Simulate a scan (new patient)</button>
+        <p class="note">Live version: this QR opens the hospital's WhatsApp chat with "Hi, I want an OPD token" already typed. The demo QR points to a placeholder number.</p>
+      </div>
+      <div class="qr" id="qr" aria-label="QR code for WhatsApp token booking"></div>
+    </div>
+
+    <div class="chat-switch">
+      <label for="chat-select">Viewing patient's phone</label>
+      <select id="chat-select"></select>
+    </div>
+    <div class="phone">
+      <div class="chat-head">
+        <div class="avatar" aria-hidden="true">+</div>
+        <div><div class="chat-title" id="chat-title"></div><div class="chat-sub" id="chat-sub">Business account · automated replies</div></div>
+      </div>
+      <div id="chat-body" class="chat-body" aria-live="polite"></div>
+      <div id="quick" class="quick"></div>
+      <form id="chat-form" class="chat-input">
+        <input id="chat-text" autocomplete="off" placeholder="Type a message" aria-label="Message">
+        <button class="send" aria-label="Send">➤</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- RECEPTION -->
+  <section id="view-reception" class="view" hidden>
+    <h2 class="h">Queue</h2>
+    <p class="lead">Tap <b>Next patient</b> when the patient comes out of the doctor's cabin. The TV, the announcement, the WhatsApp updates and the sheet all update from that one tap.</p>
+    <div class="card qc" id="qc"></div>
+
+    <h2 class="h">Walk-in registration</h2>
+    <p class="lead">For patients who don't use WhatsApp. Type the details once; the token prints and the row goes into the sheet.</p>
+    <form id="walkin" class="card form">
+      <div class="field full"><label for="w-name">Patient name</label><input id="w-name" required placeholder="e.g. Kamla Devi"></div>
+      <div class="field"><label for="w-age">Age</label><input id="w-age" type="number" min="0" max="120" required placeholder="62"></div>
+      <div class="field"><label for="w-gender">Sex</label><select id="w-gender"><option value="F">Female</option><option value="M">Male</option><option value="O">Other</option></select></div>
+      <div class="field"><label for="w-phone">Mobile (optional)</label><input id="w-phone" inputmode="tel" placeholder="98xxx xxxxx"></div>
+      <div class="field"><label for="w-complaint">Problem</label><input id="w-complaint" placeholder="e.g. Sugar check-up"></div>
+      <div class="field full"><label for="w-city">City / village</label><input id="w-city" placeholder="e.g. Gharaunda"></div>
+      <div class="full"><button class="btn primary" style="width:100%">Register and print token</button></div>
+    </form>
+
+    <h2 class="h">Token printer</h2>
+    <p class="lead">Every registration, from the QR code or the counter, prints a slip here.</p>
+    <div class="printer">
+      <div class="printer-label">Thermal printer · 80 mm</div>
+      <div class="slot"></div>
+      <div id="slip-area"></div>
+      <div class="printer-actions">
+        <button id="btn-print" class="btn" type="button">Print this slip</button>
+        <label class="toggle" for="autoprint"><input type="checkbox" id="autoprint"> Print automatically on registration</label>
+      </div>
+      <div id="recent-slips" class="chips"></div>
+    </div>
+
+    <h2 class="h">WhatsApp messages sent automatically</h2>
+    <p class="lead">The called patient gets "your turn", the next one gets "you're next", and the one with 2 ahead gets a time estimate.</p>
+    <ul id="msg-log" class="log"></ul>
+  </section>
+
+  <!-- TV -->
+  <section id="view-tv" class="view" hidden>
+    <div class="tv-actions">
+      <button id="btn-fs" class="btn" type="button">Full screen</button>
+      <label class="toggle" for="mute"><input type="checkbox" id="mute"> Mute announcements</label>
+    </div>
+    <div id="tv" class="tv">
+      <div class="tv-head"><span id="tv-hosp"></span><span id="tv-clock"></span></div>
+      <div class="tv-main">
+        <div class="tv-label">Now serving · <span class="hi">अभी</span></div>
+        <div class="tv-now" id="tv-now">–</div>
+        <div class="tv-doc" id="tv-doc"></div>
+      </div>
+      <div class="tv-next" id="tv-next"></div>
+      <div class="tv-foot"><div class="marquee"><span>Please watch for your token number · कृपया अपने टोकन नंबर का ध्यान रखें · Scan the QR at reception to get updates on WhatsApp · व्हाट्सऐप पर अपडेट के लिए रिसेप्शन पर QR स्कैन करें</span></div></div>
+      <div id="tv-banner" class="tv-banner" hidden></div>
+    </div>
+    <div class="remote">
+      <button class="btn primary" data-act="next" type="button">Next patient ▶</button>
+      <button class="btn" data-act="recall" type="button">Call again</button>
+    </div>
+    <p class="note">These buttons are the same as the ones on the Reception tab, repeated here so you can demo without switching tabs. The announcement uses the device's built-in voice: Hindi if a Hindi voice is installed, then English.</p>
+  </section>
+
+  <!-- SHEET -->
+  <section id="view-sheet" class="view" hidden>
+    <div class="sheet-head">
+      <h2 class="h" style="margin:0">OPD register</h2>
+      <div class="row">
+        <button id="btn-csv" class="btn" type="button">Download for Excel</button>
+        <button id="btn-copy" class="btn" type="button">Copy</button>
+      </div>
+    </div>
+    <p class="lead">Every registration lands here as a row, and its status changes automatically as the receptionist taps Next. In the live version this is a Google Sheet the owner can open from anywhere. It replaces the paper register.</p>
+    <div id="stats" class="stats"></div>
+    <div class="table-wrap"><table id="sheet"></table></div>
+    <div class="legend">
+      <span><span class="st waiting">Waiting</span> registered, not yet called</span>
+      <span><span class="st called">With doctor</span> called in by Next</span>
+      <span><span class="st done">Done</span> next patient was called after them</span>
+      <span><span class="st noshow">Not present</span> skipped when called</span>
+    </div>
+
+    <h2 class="h">Settings</h2>
+    <div class="card settings">
+      <div class="field"><label for="hosp-input">Hospital name</label><input id="hosp-input"></div>
+      <div class="field"><label for="doc-input">Doctor name</label><input id="doc-input"></div>
+      <div class="row">
+        <button id="btn-reset" class="btn" type="button">Reset to sample patients</button>
+        <button id="btn-clear" class="btn danger" type="button">Clear everything</button>
+      </div>
+      <p class="note">Rows marked "Sample" are example patients. Data is stored only in this browser.</p>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button class="tab" role="tab" data-view="patient">Patient</button>
+  <button class="tab" role="tab" data-view="reception">Reception</button>
+  <button class="tab" role="tab" data-view="tv">TV screen</button>
+  <button class="tab" role="tab" data-view="sheet">Sheet</button>
+</nav>
+<div id="toast" hidden></div>
+<div id="print-area"></div>
+
+<script>
+const STATUS={waiting:'Waiting',called:'With doctor',done:'Done',noshow:'Not present'};
+const KEY='opd-token-demo-v2', VKEY='opd-token-demo-view';
+const VIEWS=['patient','reception','tv','sheet'];
+const $=s=>document.querySelector(s);
+const now=()=>Date.now();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTime=ts=>new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+const fmtDate=ts=>new Date(ts).toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
+const titleCase=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase());
+const multiline=s=>esc(s).replace(/\n/g,'<br>');
+let S, view='patient';
+
+function seed(){
+  const t=now(), m=60000;
+  const mk=(token,name,age,gender,complaint,city,status,ago)=>({id:'p'+token,token,name,age,gender,phone:'',complaint,city,source:'Sample',status,
+    createdAt:t-ago*m,calledAt:status==='called'?t-4*m:status==='done'?t-14*m:null,doneAt:status==='done'?t-4*m:null,notified:{},chatId:null});
+  return {hospital:'Sunrise Hospital, Karnal',doctor:'Dr. Anil Sharma',nextToken:6,muted:false,autoprint:false,chats:[],activeChat:null,log:[],slips:[],slipShown:null,
+    patients:[
+      mk(1,'Ramesh Kumar',54,'M','Fever, 3 days','Gharaunda','done',45),
+      mk(2,'Sunita Devi',32,'F','Stomach pain','Karnal','called',34),
+      mk(3,'Harpreet Kaur',45,'F','Knee pain','Indri','waiting',22),
+      mk(4,'Manoj Kumar',61,'M','BP check-up','Taraori','waiting',15),
+      mk(5,'Kavya',5,'F','Cough and cold','Nilokheri','waiting',9),
+    ]};
+}
+function blank(){const s=seed();s.patients=[];s.nextToken=1;return s}
+function load(){try{const r=localStorage.getItem(KEY);if(r){S=JSON.parse(r);return}}catch(e){}S=seed()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- queue ---------- */
+const waiting=()=>S.patients.filter(p=>p.status==='waiting').sort((a,b)=>a.token-b.token);
+const current=()=>S.patients.find(p=>p.status==='called');
+function avgMin(){
+  const ds=S.patients.filter(p=>p.calledAt&&p.doneAt&&p.status==='done').map(p=>(p.doneAt-p.calledAt)/60000).filter(x=>x>=1&&x<=30).slice(-5);
+  return ds.length?Math.round(ds.reduce((a,b)=>a+b,0)/ds.length):7;
+}
+const aheadOf=p=>Math.max(0,waiting().findIndex(x=>x.id===p.id));
+const estFor=ahead=>(ahead+(current()?1:0))*avgMin();
+function randPhone(){const d='9'+String(Math.floor(Math.random()*1e9)).padStart(9,'0');return '+91 '+d.slice(0,5)+' '+d.slice(5)}
+
+function register(data,source,chatId){
+  const ahead=waiting().length;
+  const p={id:'p'+now()+Math.random().toString(36).slice(2,6),token:S.nextToken++,...data,source,status:'waiting',
+    createdAt:now(),calledAt:null,doneAt:null,notified:{},chatId:chatId||null,printAhead:ahead,printEst:estFor(ahead)};
+  S.patients.push(p);
+  S.slips.unshift(p.id);S.slips=S.slips.slice(0,10);S.slipShown=p.id;
+  save();renderAll(true);
+  toast(`Token ${p.token} printed at reception and added to the sheet`);
+  if(S.autoprint)setTimeout(()=>printSlip(p),1500);
+  return p;
+}
+
+function notify(p,text){
+  if(!p.phone)return;
+  S.log.unshift({at:now(),phone:p.phone,token:p.token,text});S.log=S.log.slice(0,60);
+  const c=p.chatId&&S.chats.find(x=>x.id===p.chatId);
+  if(c){c.messages.push({from:'bot',text,at:now()});if(!(view==='patient'&&S.activeChat===c.id))c.unread=true}
+}
+
+function callNext(skip){
+  const cur=current();
+  if(cur){cur.status=skip?'noshow':'done';cur.doneAt=now()}
+  const w=waiting();
+  if(!w.length){save();renderAll();toast('No more patients waiting');return}
+  const n=w[0];n.status='called';n.calledAt=now();
+  notify(n,`🔔 Token ${n.token}: it's your turn now. Please go to ${S.doctor}'s cabin.\nआपकी बारी है, कृपया डॉक्टर के केबिन में जाएँ।`);
+  const avg=avgMin();
+  w.slice(1).forEach((p,i)=>{
+    if(i===0&&!p.notified.next){p.notified.next=true;notify(p,`⏳ Token ${p.token}: you're next. Please wait near the doctor's cabin.`)}
+    else if(i===2&&!p.notified.two){p.notified.two=true;notify(p,`🕒 Token ${p.token}: 2 patients ahead of you, about ${3*avg} min. You can wait nearby.`)}
+  });
+  save();renderAll();flashTV();announce(n);
+}
+
+/* ---------- sound ---------- */
+let actx;
+function chime(){try{
+  actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const t=actx.currentTime;
+  [[880,0],[660,.38]].forEach(([f,o])=>{const os=actx.createOscillator(),g=actx.createGain();os.frequency.value=f;
+    g.gain.setValueAtTime(.0001,t+o);g.gain.exponentialRampToValueAtTime(.3,t+o+.02);g.gain.exponentialRampToValueAtTime(.0001,t+o+.6);
+    os.connect(g).connect(actx.destination);os.start(t+o);os.stop(t+o+.65)});
+}catch(e){}}
+function voice(prefix){try{return speechSynthesis.getVoices().find(v=>(v.lang||'').toLowerCase().replace('_','-').startsWith(prefix))}catch(e){return null}}
+function announce(p){
+  const b=$('#tv-banner');b.textContent=`Token ${p.token}, please go in`;b.hidden=false;
+  clearTimeout(announce.t);announce.t=setTimeout(()=>b.hidden=true,5000);
+  if(view!=='tv')toast(`Announcing token ${p.token}`);
+  if(S.muted)return;
+  chime();
+  if(!('speechSynthesis' in window))return;
+  try{
+    speechSynthesis.cancel();
+    const hi=voice('hi'), en=voice('en-in')||voice('en');
+    const parts=[];
+    if(hi)parts.push([`टोकन नंबर ${p.token}, कृपया डॉक्टर के केबिन में जाएँ।`,hi]);
+    parts.push([`Token number ${p.token}, please go to the doctor's cabin.`,en]);
+    setTimeout(()=>parts.forEach(([t,v])=>{const u=new SpeechSynthesisUtterance(t);if(v){u.voice=v;u.lang=v.lang}u.rate=.9;speechSynthesis.speak(u)}),950);
+  }catch(e){}
+}
+try{speechSynthesis.getVoices()}catch(e){}
+
+/* ---------- WhatsApp bot ---------- */
+function activeChat(){return S.chats.find(c=>c.id===S.activeChat)}
+function newChat(){
+  const c={id:'c'+now(),phone:randPhone(),messages:[],step:'start',draft:{},patientId:null,unread:false};
+  S.chats.unshift(c);S.activeChat=c.id;save();renderChat();
+  const i=$('#chat-text');i.value='Hi, I want an OPD token';i.focus();
+  return c;
+}
+const say=(c,text,buttons)=>c.messages.push({from:'bot',text,at:now(),buttons:buttons||null});
+function ask(c){
+  const d=c.draft;
+  switch(c.step){
+    case 'name':say(c,`Namaste 🙏 Welcome to ${S.hospital}.\nI'll book your OPD token with ${S.doctor} in a few quick steps.\n\nWhat is the patient's full name?\nमरीज़ का पूरा नाम लिखें।`);break;
+    case 'age':say(c,'Patient\'s age in years?\nउम्र (साल में)?');break;
+    case 'gender':say(c,'Male or female?',['Male','Female','Other']);break;
+    case 'complaint':say(c,'What is the main problem? Tap one or type it.',['Fever','Body or joint pain','Cough and cold','Routine check-up','Follow-up visit']);break;
+    case 'city':say(c,'Your city or village?\nशहर / गाँव का नाम?');break;
+    case 'confirm':say(c,`Please check the details:\n• ${d.name}, ${d.age}/${d.gender}\n• ${d.complaint}\n• ${d.city}\n• Mobile ${c.phone}`,['Confirm','Start again']);break;
+  }
+}
+function reply(c,fn){c.typing=true;renderChat();setTimeout(()=>{c.typing=false;fn();save();renderChat();renderTabs()},650)}
+function handle(c,text){
+  text=text.trim();if(!text)return;
+  c.messages.forEach(m=>{if(m.buttons)m.used=true});
+  c.messages.push({from:'me',text,at:now()});
+  const d=c.draft;let err=null;
+  switch(c.step){
+    case 'start':c.step='name';break;
+    case 'name':if(text.length<2)err='Please type the full name.';else{d.name=titleCase(text);c.step='age'}break;
+    case 'age':{const n=parseInt(text,10);if(!(n>=0&&n<=120))err='Please send the age as a number, for example 45.';else{d.age=n;c.step='gender'}break}
+    case 'gender':{const g=text.toLowerCase();d.gender=g.startsWith('m')?'M':g.startsWith('f')?'F':'O';c.step='complaint';break}
+    case 'complaint':d.complaint=text;c.step='city';break;
+    case 'city':d.city=titleCase(text);c.step='confirm';break;
+    case 'confirm':
+      if(/^start/i.test(text)){c.draft={};c.step='name';break}
+      if(/^(confirm|yes|ok|haan|ha)/i.test(text)){finish(c);return}
+      err='Tap Confirm, or Start again to change something.';break;
+    default:status(c);return;
+  }
+  reply(c,()=>{if(err){say(c,err);if(['gender','confirm'].includes(c.step))ask(c)}else ask(c)});
+}
+function finish(c){
+  reply(c,()=>{
+    const d=c.draft;
+    const p=register({name:d.name,age:d.age,gender:d.gender,phone:c.phone,complaint:d.complaint,city:d.city},'QR code',c.id);
+    c.patientId=p.id;c.step='done';
+    say(c,`✅ Token booked\n\nToken number: ${p.token}\n${S.doctor}\n${p.printAhead} patient(s) ahead of you, about ${p.printEst} min.\n\nCollect your printed slip at reception. We will message you when your turn is near. Reply STATUS anytime.`);
+  });
+}
+function status(c){
+  reply(c,()=>{
+    const p=S.patients.find(x=>x.id===c.patientId);
+    if(!p){say(c,'Please scan the QR at reception to book a new token.');return}
+    if(p.status==='called')say(c,`Token ${p.token}: it's your turn. Please go to the doctor's cabin.`);
+    else if(p.status==='waiting'){const a=aheadOf(p);say(c,`Token ${p.token}: ${a} patient(s) ahead of you, about ${estFor(a)} min.`)}
+    else say(c,`Token ${p.token} is complete. Get well soon! Scan the QR at reception to book again.`);
+  });
+}
+
+/* ---------- rendering ---------- */
+function renderChat(){
+  const sel=$('#chat-select');
+  sel.innerHTML=S.chats.length?S.chats.map(c=>{const p=S.patients.find(x=>x.id===c.patientId);
+    return `<option value="${c.id}" ${c.id===S.activeChat?'selected':''}>${esc(c.phone)}${p?` · Token ${p.token} · ${esc(p.name)}`:' · booking…'}${c.unread?' ● new':''}</option>`}).join(''):'<option>No patient chats yet</option>';
+  sel.disabled=!S.chats.length;
+  $('#chat-title').textContent=S.hospital;
+  const c=activeChat(), body=$('#chat-body'), q=$('#quick');
+  if(!c){body.innerHTML='<div class="chat-empty">Tap <b>Simulate a scan</b> above to play a patient who just scanned the QR at the counter.</div>';q.innerHTML='';$('#chat-sub').textContent='Business account · automated replies';return}
+  if(view==='patient')c.unread=false;
+  $('#chat-sub').textContent=`Patient's number ${c.phone} is shared automatically`;
+  body.innerHTML=c.messages.map(m=>`<div class="msg ${m.from}"><div class="bubble">${multiline(m.text)}<span class="t">${fmtTime(m.at)}${m.from==='me'?' ✓✓':''}</span></div></div>`).join('')
+    +(c.typing?'<div class="msg bot"><div class="bubble typing" aria-label="typing"><i></i><i></i><i></i></div></div>':'');
+  const last=[...c.messages].reverse().find(m=>m.from==='bot');
+  q.innerHTML=(last&&last.buttons&&!last.used&&!c.typing)?last.buttons.map(b=>`<button type="button" class="qr-btn" data-b="${esc(b)}">${esc(b)}</button>`).join(''):'';
+  body.scrollTop=body.scrollHeight;
+}
+
+function slipHTML(p){
+  return `<div class="s-h">${esc(S.hospital.toUpperCase())}</div><div class="s-sub">OPD TOKEN</div><div class="s-rule"></div>
+  <div class="s-tok">${p.token}</div><div class="s-doc">${esc(S.doctor)}</div><div class="s-rule"></div>
+  <div class="s-row"><span>Name</span><b>${esc(p.name)}</b></div>
+  <div class="s-row"><span>Age/Sex</span><b>${esc(p.age)}/${esc(p.gender)}</b></div>
+  <div class="s-row"><span>Date</span><b>${fmtDate(p.createdAt)} ${fmtTime(p.createdAt)}</b></div>
+  <div class="s-row"><span>Ahead</span><b>${p.printAhead??'–'} (~${p.printEst??'–'} min)</b></div>
+  <div class="s-row"><span>Booked via</span><b>${esc(p.source)}</b></div>
+  <div class="s-rule"></div><div class="s-foot">Watch the screen for your number<br>कृपया स्क्रीन पर अपना नंबर देखें</div>`;
+}
+const shownSlip=()=>S.patients.find(x=>x.id===S.slipShown)||S.patients.find(x=>x.id===S.slips[0]);
+function renderSlips(animate){
+  const p=shownSlip();
+  $('#slip-area').innerHTML=p?`<div class="slip${animate?' printing':''}">${slipHTML(p)}</div>`:'<p class="note" style="margin-top:16px">No slips yet. Register a patient to print one.</p>';
+  $('#btn-print').disabled=!p;
+  $('#autoprint').checked=!!S.autoprint;
+  $('#recent-slips').innerHTML=S.slips.map(id=>{const x=S.patients.find(y=>y.id===id);return x?`<button type="button" class="chip" data-slip="${x.id}" aria-pressed="${p&&p.id===x.id}">Token ${x.token}</button>`:''}).join('');
+}
+function printSlip(p){
+  if(!p)return;
+  $('#print-area').innerHTML=`<div class="slip">${slipHTML(p)}</div>`;
+  try{window.print()}catch(e){toast('Printing is not available on this device')}
+}
+
+function renderQueue(){
+  const c=current(), w=waiting();
+  $('#qc').innerHTML=`<div class="qc-top"><div><div class="qc-doc">${esc(S.doctor)}</div>
+      ${c?`<div class="qc-pt">Inside: ${esc(c.name)}, ${esc(c.age)}/${esc(c.gender)} · ${esc(c.complaint)}</div>`:'<div class="qc-pt muted">No patient inside</div>'}
+      <div class="qc-wait">${w.length} waiting${w.length?` (tokens ${w.slice(0,6).map(x=>x.token).join(', ')}${w.length>6?'…':''})`:''} · about ${avgMin()} min per patient</div></div>
+      <div class="qc-now"><span>Now</span><b>${c?c.token:'–'}</b></div></div>
+    <div class="qc-btns"><button class="btn primary" data-act="next" type="button">Next patient ▶</button>
+      <button class="btn" data-act="recall" type="button" ${c?'':'disabled'}>Call again</button>
+      <button class="btn ghost" data-act="skip" type="button" ${c?'':'disabled'}>Not present</button></div>`;
+  $('#msg-log').innerHTML=S.log.length?S.log.slice(0,25).map(l=>`<li><div class="l-meta">${fmtTime(l.at)} · to ${esc(l.phone)} · Token ${l.token}</div><div>${multiline(l.text)}</div></li>`).join('')
+    :'<li class="muted">Nothing sent yet. Book a token through the QR chat (Patient tab) so the patient has a number, then tap Next patient.</li>';
+}
+
+function renderTV(){
+  const c=current(), w=waiting().slice(0,5);
+  $('#tv-hosp').textContent=S.hospital;
+  $('#tv-now').textContent=c?c.token:'–';
+  $('#tv-doc').textContent=S.doctor;
+  $('#tv-next').innerHTML=`<span class="tv-label">Next</span>`+(w.length?w.map(p=>`<span class="n">${p.token}</span>`).join(''):'<span class="tv-label">–</span>');
+  $('#mute').checked=!!S.muted;
+  document.querySelectorAll('.remote [data-act="recall"]').forEach(b=>b.disabled=!c);
+}
+function flashTV(){const el=$('#tv-now');el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+
+const COLS=['Token','Date','Time booked','Name','Age','Sex','Mobile','Problem','City/Village','Booked via','Status','Called in at','Finished at'];
+const rowVals=p=>[p.token,fmtDate(p.createdAt),fmtTime(p.createdAt),p.name,p.age,p.gender,p.phone||'',p.complaint||'',p.city||'',p.source,STATUS[p.status],p.calledAt?fmtTime(p.calledAt):'',p.doneAt?fmtTime(p.doneAt):''];
+function csvText(){
+  const ps=[...S.patients].sort((a,b)=>a.token-b.token);
+  const q=v=>/[",\n]/.test(String(v))?`"${String(v).replace(/"/g,'""')}"`:String(v);
+  return [COLS,...ps.map(rowVals)].map(r=>r.map(q).join(',')).join('\r\n');
+}
+function renderSheet(){
+  const ps=[...S.patients].sort((a,b)=>a.token-b.token);
+  const n=k=>ps.filter(p=>p.status===k).length;
+  $('#stats').innerHTML=[['Registered',ps.length],['Waiting',n('waiting')],['With doctor',n('called')],['Done',n('done')],['Via QR code',ps.filter(p=>p.source==='QR code').length]]
+    .map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('#sheet').innerHTML=`<thead><tr><th class="ix"></th>${COLS.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`+
+    (ps.length?ps.map((p,i)=>`<tr><td class="ix">${i+1}</td>${rowVals(p).map((x,j)=>j===10?`<td><span class="st ${p.status}">${x}</span></td>`:j===9&&x==='Sample'?'<td class="src-sample">Sample</td>':`<td>${esc(x)}</td>`).join('')}</tr>`).join('')
+      :`<tr><td class="ix">1</td><td colspan="${COLS.length}" class="muted">No registrations yet. Book a token on the Patient or Reception tab.</td></tr>`)+'</tbody>';
+  const hi=$('#hosp-input');if(document.activeElement!==hi)hi.value=S.hospital;
+  const di=$('#doc-input');if(document.activeElement!==di)di.value=S.doctor;
+}
+
+function renderTabs(){
+  document.querySelectorAll('.tab').forEach(t=>{t.setAttribute('aria-selected',t.dataset.view===view);
+    const dot=t.querySelector('.dot');const want=t.dataset.view==='patient'&&S.chats.some(c=>c.unread);
+    if(want&&!dot)t.insertAdjacentHTML('beforeend','<span class="dot" aria-label="new messages"></span>');if(!want&&dot)dot.remove()});
+  document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+view);
+}
+function renderAll(animateSlip){
+  $('#hosp-name').textContent=S.hospital;document.title=S.hospital+' · OPD Tokens';
+  renderChat();renderQueue();renderSlips(animateSlip);renderTV();renderSheet();renderTabs();
+}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('.tab');
+  if(tab){view=tab.dataset.view;try{localStorage.setItem(VKEY,view)}catch(_){}
+    if(view==='patient'){const c=activeChat();if(c)c.unread=false}
+    renderAll();window.scrollTo({top:0});return}
+  const act=e.target.closest('[data-act]');
+  if(act){const a=act.dataset.act;
+    if(a==='next')callNext(false);else if(a==='skip')callNext(true);else{const c=current();if(c)announce(c)}
+    return}
+  const qb=e.target.closest('.qr-btn');
+  if(qb){const c=activeChat();if(c)handle(c,qb.dataset.b);return}
+  const chip=e.target.closest('[data-slip]');
+  if(chip){S.slipShown=chip.dataset.slip;save();renderSlips(true)}
+});
+$('#btn-scan').addEventListener('click',()=>{newChat();toast('Scanned. WhatsApp opened with the message typed. Tap send.')});
+$('#chat-form').addEventListener('submit',e=>{e.preventDefault();const i=$('#chat-text');const text=i.value;if(!text.trim())return;
+  const c=activeChat()||newChat();i.value='';handle(c,text)});
+$('#chat-select').addEventListener('change',e=>{S.activeChat=e.target.value;const c=activeChat();if(c)c.unread=false;save();renderAll()});
+
+$('#walkin').addEventListener('submit',e=>{e.preventDefault();
+  const name=$('#w-name').value.trim(),age=parseInt($('#w-age').value,10);
+  if(!name||!(age>=0&&age<=120)){toast('Enter a name and an age between 0 and 120');return}
+  let phone=$('#w-phone').value.replace(/\D/g,'').slice(-10);phone=phone.length===10?`+91 ${phone.slice(0,5)} ${phone.slice(5)}`:'';
+  register({name:titleCase(name),age,gender:$('#w-gender').value,phone,complaint:$('#w-complaint').value.trim()||'–',city:titleCase($('#w-city').value.trim())||'–'},'Reception');
+  e.target.reset();$('#w-name').focus()});
+
+$('#btn-print').addEventListener('click',()=>printSlip(shownSlip()));
+$('#autoprint').addEventListener('change',e=>{S.autoprint=e.target.checked;save()});
+$('#mute').addEventListener('change',e=>{S.muted=e.target.checked;save();if(S.muted)try{speechSynthesis.cancel()}catch(_){}});
+$('#btn-fs').addEventListener('click',()=>{const el=$('#tv'),fail=()=>toast('Full screen is not available here. Turn the phone sideways instead.');
+  try{const r=el.requestFullscreen?el.requestFullscreen():(el.webkitRequestFullscreen?el.webkitRequestFullscreen():null);if(r&&r.catch)r.catch(fail);else if(!el.requestFullscreen&&!el.webkitRequestFullscreen)fail()}catch(_){fail()}});
+
+$('#hosp-input').addEventListener('input',e=>{S.hospital=e.target.value.trim()||'Hospital';save();renderAll()});
+$('#doc-input').addEventListener('input',e=>{S.doctor=e.target.value.trim()||'Doctor';save();renderAll()});
+function armed(btn,label,fn){btn.addEventListener('click',()=>{
+  if(btn.dataset.armed){delete btn.dataset.armed;btn.textContent=label;fn();return}
+  btn.dataset.armed='1';btn.textContent='Tap again to confirm';setTimeout(()=>{if(btn.dataset.armed){delete btn.dataset.armed;btn.textContent=label}},3500)})}
+const keepNames=s=>{s.hospital=S.hospital;s.doctor=S.doctor;return s};
+armed($('#btn-reset'),'Reset to sample patients',()=>{S=keepNames(seed());save();renderAll();toast('Sample patients restored')});
+armed($('#btn-clear'),'Clear everything',()=>{S=keepNames(blank());save();renderAll();toast('Cleared. Token numbers start again from 1')});
+
+$('#btn-csv').addEventListener('click',()=>{
+  const blob=new Blob(['﻿'+csvText()],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`opd-register-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+});
+$('#btn-copy').addEventListener('click',()=>{
+  const t=csvText().replace(/,/g,'\t');
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('Copied. Paste into Excel or Google Sheets'),()=>toast('Copy is blocked here. Use Download for Excel'));
+  else toast('Copy is not available here. Use Download for Excel');
+});
+
+function tick(){$('#tv-clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+setInterval(tick,1000);tick();
+
+/* ---------- start ---------- */
+load();
+if(!S.doctor)S.doctor='Dr. Anil Sharma';
+try{const v=localStorage.getItem(VKEY);if(VIEWS.includes(v))view=v}catch(_){}
+const h=(location.hash||'').slice(1);if(VIEWS.includes(h))view=h;
+try{new QRCode($('#qr'),{text:'https://wa.me/919800000000?text=Hi%2C%20I%20want%20an%20OPD%20token',width:130,height:130,colorDark:'#14251f',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+catch(_){$('#qr').innerHTML='<span class="note">QR</span>'}
+renderAll();
+</script>
+</body>
+</html>
